@@ -1,8 +1,7 @@
 package evaljdbc;
 
 public class Disc {
-	// attributes
-	
+	// attributes	
 	private Long id;
 	private String title;
 	private Long artistId;
@@ -14,22 +13,7 @@ public class Disc {
 	private int year;
 	private double rating;
 
-
-	// constructors
-	
-	public Disc() {
-		this.id= null;
-		this.title= "";
-		this.artistId= null;
-		this.artistName= "";
-		this.typeId= null;
-		this.typeName= "";
-		this.styleId= null;
-		this.styleName= "";
-		this.year= 0;
-		this.rating= 0.0;
-	}
-		
+	// constructors	
 	public Disc(Long id, String title, Long artistId, String artistName, Long typeId, String typeName, Long styleId,
 			String styleName, int year, double rating) {
 		this.id= id;
@@ -44,21 +28,19 @@ public class Disc {
 		this.rating= rating;
 	}
 
+	public Disc() {
+		this(null, "", null, "", null, "", null, "", 0, 0.0);
+	}
+	
+	public Disc(Long id, String title, Long artistId, Long typeId, Long styleId, int year, double rating) {
+		this(id, title, artistId, "", typeId, "", styleId, "", year, rating);
+	}
+	
 	public Disc(Disc disc) {
-		this.id= disc.id;
-		this.title= disc.title;
-		this.artistId= disc.artistId;
-		this.artistName= disc.artistName;
-		this.typeId= disc.typeId;
-		this.typeName= disc.typeName;
-		this.styleId= disc.styleId;
-		this.styleName= disc.styleName;
-		this.year= disc.year;
-		this.rating= disc.rating;
+		this(disc.id, disc.title, disc.artistId, disc.artistName, disc.typeId, disc.typeName, disc.styleId, disc.styleName, disc.year, disc.rating);
 	}
 
 	// getters and setters
-
 	public Long getId() {
 		return id;
 	}
