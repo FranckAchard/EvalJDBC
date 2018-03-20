@@ -17,12 +17,11 @@ public class Discotheque {
 	// HashMaps for storing list of types and styles - not really used as expected following the "Great Simplification"...
 	private static HashMap<Long, String> listTypes= new HashMap<Long, String>();
 	private static HashMap<Long, String> listStyles= new HashMap<Long, String>();
-	private static HashMap<Long, String> listArtists= new HashMap<Long, String>();
 
 	public static void main(String[] args) {
 
 		// connection string for local DB (PostgreSQL)
-		// TODO store login/password in properties file + prepared statements
+		// TODO store login/password in properties file + prepared statements + some exceptions...
 
 		String[] connectStringLocalDb= {"jdbc:postgresql://localhost:5432/discotheque", "postgres", "admin"};
 
@@ -32,14 +31,13 @@ public class Discotheque {
 			//System.out.println("connexion ouverte : " + connLocal);
 
 			try (Statement stmt= connLocal.createStatement()) {
-
+				
 				// print menu
 				Scanner input= new Scanner(System.in);
 				String menuChoice= "";
 				String subMenuChoice= "";
 				getAllTypes(stmt);
 				getAllStyles(stmt);
-				getAllArtists(stmt);
 
 				do {
 					printMenu();
@@ -106,36 +104,58 @@ public class Discotheque {
 	public static void callSubMenu(String pChoice, Statement pStmt, Scanner pInput) {
 		switch (pChoice) {
 		// artist menu
-		case "1.1":
-			System.out.println(listArtists);;
+		case "1.1": // list artists
+			printAllArtists(pStmt);
 			break;
 
-		case "1.2":
-			//insertArtist(artist, pStmt);
+		case "1.2": // create artist
+			Artist newArtist= new Artist();
+			System.out.println("Saisir nom de l'artiste à créer :");
+			newArtist.setName(pInput.nextLine());
+			insertArtist(newArtist, pStmt);
 			break;
 
-		case "1.3":
-			//updateArtist(id, pStmt);
+		case "1.3": // update artist
+			Artist upArtist= new Artist();
+
+			System.out.println("Aide à la saisie :");
+			System.out.println("Liste des artistes : ");
+			printAllArtists(pStmt);
+
+			System.out.println("Saisir l'id de l'artiste à modifier :");
+			upArtist.setId(pInput.nextLong());
+			pInput.nextLine();
+			
+			System.out.println("Saisir nom de l'artiste :");
+			upArtist.setName(pInput.nextLine());
+			
+			updateArtist(upArtist, pStmt);
+			
 			break;
 
-		case "1.4":
-			//deleteArtist(id, pStmt);
+		case "1.4": // delete artist
+			System.out.println("Aide à la saisie :");
+			printAllArtists(pStmt);
+			System.out.println("Saisir id de l'artiste à supprimer :");
+			Long idArDel= new Long(pInput.nextLong());
+			pInput.nextLine();
+			deleteArtist(idArDel, pStmt);
 			break;
-
-			// disc menu
-		case "2.1":
+			
+		// disc menu
+		case "2.1": // list discs
 			printAllDiscs(pStmt);
 			break;
 
-		case "2.2":
+		case "2.2": // create disc
 			insertDisc(setDisc("creation", pInput, pStmt), pStmt);
 			break;
 
-		case "2.3":
+		case "2.3": // update disc
 			updateDisc(setDisc("update", pInput, pStmt), pStmt);
 			break;
 
-		case "2.4":
+		case "2.4": // delete disc
 			System.out.println("Aide à la saisie :");
 			printAllDiscs(pStmt);
 			System.out.println("Saisir id du disque à supprimer :");
@@ -184,13 +204,20 @@ public class Discotheque {
 		}
 	}
 
-	// method for getting all artists
-	public static void getAllArtists(Statement pStmt) {
-		String sql= "select pk_id, name from public.\"Artist\" order by name;";
+	// method for printing all artists
+	public static void printAllArtists(Statement pStmt) {
+		ArrayList<Artist> listArtists= new ArrayList<Artist>();
 
-		try (ResultSet result= pStmt.executeQuery(sql)) {
+		// select and print all discs
+
+		try (ResultSet result= pStmt.executeQuery("select pk_id, name from public.\"Artist\" order by name;")) {
 			while (result.next()) {
-				listArtists.put(new Long(result.getLong(1)), result.getString(2));
+				// add a Disc to the list
+				listArtists.add(new Artist(result.getLong(1), result.getString(2)));
+			}
+			// print artists
+			for (Artist ar : listArtists) {
+				System.out.println(ar);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -226,7 +253,8 @@ public class Discotheque {
 		Disc res= new Disc();
 
 		System.out.println("Aide à la saisie :");
-		System.out.println("Liste des artistes : " + listArtists);
+		System.out.println("Liste des artistes : ");
+		printAllArtists(pStmt);
 		System.out.println("Liste des types : " + listTypes);
 		System.out.println("Liste des styles : " + listStyles);
 
@@ -276,7 +304,6 @@ public class Discotheque {
 			ResultSet rs= pStmt.getGeneratedKeys();
 			rs.next();
 			res= rs.getLong("pk_id");
-			//System.out.println("Generated key = " + res);
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -289,11 +316,7 @@ public class Discotheque {
 	// update disc
 	public static void updateDisc(Disc pDisc, Statement pStmt) {
 
-		//String sql= "UPDATE public.\"City\" SET name= '" + pCity.getName() + "', latitude= " + pCity.getLatitude() + ", longitude= " + pCity.getLongitude() + " WHERE id=" + pCity.getId().longValue();
-
-		//String sql= "INSERT INTO public.\"Disc\" (title, year, rating, fk_artist_id, fk_type_id, fk_style_id) VALUES ('" + pDisc.getTitle() + "'," + pDisc.getYear() + "," + pDisc.getRating() + "," + pDisc.getArtistId() + "," + pDisc.getTypeId() + "," + pDisc.getStyleId() + ")";
-
-		String sql= "UPDATE public.\"Disc\" SET title= '" + pDisc.getTitle() + "', year= " + pDisc.getYear() + ", rating= " + pDisc.getRating() + ", fk_artist_id= " + pDisc.getArtistId() + ", fk_type_id= " + pDisc.getTypeId() + ", fk_style_id= " + pDisc.getStyleId();
+		String sql= "UPDATE public.\"Disc\" SET title= '" + pDisc.getTitle() + "', year= " + pDisc.getYear() + ", rating= " + pDisc.getRating() + ", fk_artist_id= " + pDisc.getArtistId() + ", fk_type_id= " + pDisc.getTypeId() + ", fk_style_id= " + pDisc.getStyleId() + " where pk_id= " + pDisc.getId();
 		System.out.println(sql);
 
 		try {
@@ -303,7 +326,6 @@ public class Discotheque {
 		}
 
 	}
-
 
 	// delete disc
 	public static void deleteDisc(Long id, Statement pStmt) {
@@ -317,4 +339,50 @@ public class Discotheque {
 		}
 	}
 
+	
+	// insert artist
+	public static Long insertArtist(Artist pArtist, Statement pStmt) {
+		long res= 0;
+
+		String sql= "INSERT INTO public.\"Artist\" (name) VALUES ('" + pArtist.getName() + "')";
+		System.out.println(sql);
+
+		try {
+			pStmt.execute(sql, Statement.RETURN_GENERATED_KEYS);
+			ResultSet rs= pStmt.getGeneratedKeys();
+			rs.next();
+			res= rs.getLong("pk_id");
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return (new Long(res));
+	}
+	
+	// update artist
+	public static void updateArtist(Artist pArtist, Statement pStmt) {
+
+		String sql= "UPDATE public.\"Artist\" SET name= '" + pArtist.getName() + "' where pk_id= " + pArtist.getId();
+		System.out.println(sql);
+
+		try {
+			pStmt.executeUpdate(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// delete artist
+	public static void deleteArtist(Long id, Statement pStmt) {
+		String sql= "DELETE FROM public.\"Artist\" WHERE pk_id=" + id.longValue();
+		System.out.println(sql);
+
+		try {
+			System.out.println("Nombre d'artistes supprimés = " + pStmt.executeUpdate(sql));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 }
